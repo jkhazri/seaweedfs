@@ -33,3 +33,8 @@
         chdir: /etc/seaweedfs
         stdin: "\n"
       loop: "{{ common_names }}"
+      
+    - name: Tiered Storage config
+      shell: | 
+         echo "fs.configure -locationPrefix=/buckets/ssd- -disk=ssd -apply" | weed shell
+         echo "fs.configure -locationPrefix=/buckets/hdd- -disk=hdd -apply" | weed shell
