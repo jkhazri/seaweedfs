@@ -1,0 +1,6 @@
+---
+- hosts: localhost
+  tasks: 
+    - name: Run the manage-inventory if the distribution is Ubuntu
+      include_role:
+        name: manage-inventory
