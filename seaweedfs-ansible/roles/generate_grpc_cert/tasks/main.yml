@@ -1,0 +1,35 @@
+---
+    - name: Define common names
+      set_fact:
+        common_names:
+          - volume
+          - master
+          - filer
+          - client
+          - s3
+
+    - name: Ensure target directory exists
+      ansible.builtin.file:
+        path: /etc/seaweedfs
+        state: directory
+        mode: '0755'
+
+    - name: Initialize CA certificate
+      ansible.builtin.shell: certstrap init --common-name "SeaweedFS CA"
+      args:
+        chdir: /etc/seaweedfs
+        stdin: "\n\n"
+
+    - name: Generate certificates without passphrase
+      ansible.builtin.shell: certstrap request-cert --common-name {{ item }}
+      args:
+        chdir: /etc/seaweedfs
+        stdin: "\n\n"
+      loop: "{{ common_names }}"
+
+    - name: Sign certificates with CA
+      ansible.builtin.shell: certstrap sign --expires "2 years" --CA "SeaweedFS CA" {{ item }}
+      args:
+        chdir: /etc/seaweedfs
+        stdin: "\n"
+      loop: "{{ common_names }}"

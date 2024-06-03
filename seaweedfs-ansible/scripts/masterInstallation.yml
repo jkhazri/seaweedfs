@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  remote_user: root
+  roles:
+    - vault-ssh-signer-role
+
+- hosts: master_servers
+  remote_user: root
+  become: yes
+  become_method: sudo
+  vars:
+    ansible_ssh_private_key_file: "{{ hostvars['localhost']['r_tempfile']['path'] }}/id_rsa"
+    ansible_ssh_extra_args: "-i {{ hostvars['localhost']['r_tempfile']['path'] }}/signed"
+  tasks:
+    - name: Run the Master-installation if the distribution is Ubuntu
+      include_role:
+        name: install_master
+      when: ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_major_version'] == '22'

@@ -1,0 +1,59 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+- name: Install useful tools
+  apt:
+    name: 
+      - parted
+      - curl
+      - wget
+    state: present
+
+- name: create seaweedfs conf directory
+  file:
+    path: "{{ seaweedFS_conf_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download SeaweedFS
+  get_url:
+    url: "{{ weed_binary_file_path }}"
+    dest: /tmp/linux_amd64.tar.g
+- name: Extract SeaweedFS
+  unarchive:
+    src: /tmp/linux_amd64.tar.gz
+    dest: /tmp/
+    remote_src: yes
+
+- name: Move 'weed' binary to /usr/local/bin
+  command: mv /tmp/weed /usr/local/bin
+- name: Ensure 'weed' binary is executable
+  file:
+    path: /usr/local/bin/weed
+    mode: '0755'
+    state: file
+
+- name: Download certstrap
+  get_url:
+    url: "{{ certstrap_binary_url }}"
+    dest: /tmp/certstrap-linux-amd64
+    mode: '0755'
+- name: Move certstrap to /usr/local/bin
+  command: mv /tmp/certstrap-linux-amd64 /usr/local/bin/certstrap
+
+- name: Make certstrap executable
+  file:
+    path: /usr/local/bin/certstrap
+    mode: '0755'
+    state: file
+
+- name: write the seaweedfs security config file
+  template:
+    src: security.toml.j2
+    dest: /etc/seaweedfs/security.toml
+    owner: root
+    group: root
+    mode: "0755"

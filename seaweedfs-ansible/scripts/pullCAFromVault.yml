@@ -1,0 +1,26 @@
+---
+- name: Configure SSH server
+  hosts: all
+  gather_facts: no
+  remote_user: root
+  become: yes
+  tasks:
+    - name: Curl the public key from Vault API and save it
+      uri:
+        url: "{{ hc_vault_server }}/v1/ssh-signer/public_key"
+        dest: "/etc/ssh/trusted-CA.pem"
+
+    - name: Replace sshd_config file to prevent password auth
+      copy:
+          src: ./files/sshd_config
+          dest: "/etc/ssh/sshd_config"
+
+    - name: Set permissions for sshd_config file
+      file:
+        path: "/etc/ssh/sshd_config"
+        mode: "0644"
+
+    - name: Restart SSH service using systemd
+      systemd:
+        name: sshd
+        state: restarted

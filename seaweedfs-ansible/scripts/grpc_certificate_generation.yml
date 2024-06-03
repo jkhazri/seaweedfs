@@ -1,0 +1,26 @@
+---
+- hosts: localhost
+  remote_user: root
+  roles:
+    - vault-ssh-signer-role
+
+- hosts: master_servers
+  remote_user: root
+  become: yes
+  become_method: sudo
+  vars:
+    ansible_ssh_private_key_file: "{{ hostvars['localhost']['r_tempfile']['path'] }}/id_rsa"
+    ansible_ssh_extra_args: "-i {{ hostvars['localhost']['r_tempfile']['path'] }}/signed"
+  tasks:
+    - name: Run the grpc-installation if the distribution is Ubuntu
+      include_role:
+        name: generate_grpc_cert
+      when: inventory_hostname == 'master1'
+
+    - name: Copy generated certificates from master1
+      synchronize:
+        src: "/etc/seaweedfs/out/"
+        dest: "/etc/seaweedfs/"
+        mode: pull
+      delegate_to: master1
+      when: inventory_hostname != 'master1'

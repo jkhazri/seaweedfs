@@ -1,0 +1,40 @@
+---
+    - name: Install PostgreSQL
+      apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+        state: present
+
+    - name: Ensure PostgreSQL service is running
+      systemd:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Become the postgres user and create the database and user
+      become_user: postgres
+      shell: |
+        psql -c "CREATE USER seaweedfs WITH PASSWORD 'mojs-*/968££98*/-*sdgmyy';"
+        psql -c "CREATE DATABASE seaweedfsdb;"
+        psql -c "GRANT ALL PRIVILEGES ON DATABASE seaweedfsdb TO seaweedfs;"
+        psql -c "ALTER USER seaweedfs WITH SUPERUSER;"
+
+    - name: Modify postgresql.conf to listen on all addresses
+      lineinfile:
+        path: /etc/postgresql/12/main/postgresql.conf
+        regexp: '^#?listen_addresses ='
+        line: "listen_addresses = '*'"
+        state: present
+
+    - name: Configure pg_hba.conf to allow connections from specific IPs
+      blockinfile:
+        path: /etc/postgresql/12/main/pg_hba.conf
+        block: |
+          host    all             all             "{{ hostvars['filer1'].ansible_host }}"/32          md5
+          host    all             all             "{{ hostvars['filer2'].ansible_host }}"/32          md5
+
+    - name: Restart PostgreSQL to apply changes
+      systemd:
+        name: postgresql
+        state: restarted

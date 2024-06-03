@@ -1,0 +1,32 @@
+---
+    - name: Create directory for master server metadata
+      file:
+        path: /root/master-server-meta
+        state: directory
+        mode: '0755'
+      
+    - name: Create systemd service file for SeaweedFS Master Server
+      copy:
+        dest: /etc/systemd/system/seaweedmaster.service
+        content: |
+                  [Unit]
+                  Description=SeaweedFS Master Server
+                  After=network.target
+        
+                  [Service]
+                  ExecStart=/usr/local/bin/weed master -ip={{ hostvars[inventory_hostname].ansible_host }} -port=9333 -mdir=/root/master-server-meta -peers= -defaultReplication=010 -metricsPort=9325          
+                  Restart=always
+                  User=root
+        
+                  [Install]
+                  WantedBy=multi-user.target
+
+    - name:  apply changes with daemon_reload
+      systemd:
+          daemon_reload: true
+
+    - name: Ensure SeaweedFS Master Server service is enabled and started
+      systemd:
+        name: seaweedmaster
+        state: started
+        enabled: true

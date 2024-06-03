@@ -1,0 +1,39 @@
+---
+    - name: write the seaweedfs eaweedFS S3 API config file
+      template:
+        src: filer.toml.j2
+        dest: /etc/seaweedfs/config.json
+        owner: root
+        group: root
+        mode: "0755"
+           
+    - name: Create systemd service file for SeaweedFS S3 API Server
+      copy:
+        dest: /etc/systemd/system/seaweedfs-AmazonS3API.service
+        content: |
+                  [Unit]
+                  Description=SeaweedFS AmazonS3API Server
+                  After=network.target
+                  
+                  [Service]
+                  Type=simple
+                  Restart=on-failure
+                  User=root
+                  Group=root
+                  
+                  ExecStart=/usr/local/bin/weed  s3 -port=8333 -filer="{{ hostvars['filer1'].ansible_host }}":8888 -allowEmptyFolder -ip.bind="{{ hostvars['s3_server'].ansible_host }}"  -config=/etc/seaweedfs/config.json -metricsPort=9328
+                  
+                  KillSignal=SIGTERM
+                  
+                  [Install]
+                  WantedBy=multi-user.target
+
+    - name:  apply changes with daemon_reload
+      systemd:
+          daemon_reload: true
+
+    - name: Ensure SeaweedFS S3  service is enabled and started
+      systemd:
+        name: seaweedfs-AmazonS3API
+        state: started
+        enabled: true

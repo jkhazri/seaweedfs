@@ -1,0 +1,36 @@
+---
+- name: Create temporary directory
+  tempfile:
+    state: directory
+    suffix: app
+  register: r_tempfile
+
+- name: Generate public key
+  command:
+    ssh-keygen -t rsa -f {{ r_tempfile.path | quote }}/id_rsa  -C "" -N ""
+    
+- name: Read public key 
+  set_fact: 
+    temp_public_key: "{{ lookup('file', r_tempfile.path + '/id_rsa.pub') }} "
+
+- name: Sign public key
+  uri:
+    url: "{{ hc_vault_server }}/v1/ssh-signer/sign/onecloud_ssh_ca_role"
+    validate_certs: no
+    method: POST
+    headers:
+      X-Vault-Token: "{{ hc_vault_token }}"
+    body: "{{ lookup('template', 'templates/hc_vault_pubkey.j2') }}"
+    body_format: json
+    return_content: yes
+  register: r_sign
+
+- name: Store key temporarily
+  copy:  
+    content: "{{ r_sign.json.data.signed_key }}" 
+    dest: "{{ r_tempfile.path }}/signed"
+
+- set_fact:
+    ansible_ssh_private_key_file: "{{ r_tempfile.path }}/id_rsa"
+    ansible_ssh_extra_args: "-i {{ r_tempfile.path }}/signed"
+    ansible_user: root

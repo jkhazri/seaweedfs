@@ -1,0 +1,36 @@
+---
+- name: write the seaweedfs filer config file
+  template:
+    src: filer.toml.j2
+    dest: /etc/seaweedfs/filer.toml
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create systemd service file for SeaweedFS filer Server
+  copy:
+    dest: /etc/systemd/system/seaweedfs-filer.service
+    content: |
+              [Unit]
+              Description=SeaweedFS Filer Server
+              After=network.target
+              
+              [Service]
+              Type=simple
+              Restart=on-failure
+              User=root
+              Group=root
+              
+              ExecStart=/usr/local/bin/weed filer -ip={{ hostvars[inventory_hostname].ansible_host }} -port=8888 --master={{ hostvars['master1'].ansible_host }}:9333,{{ hostvars['master2'].ansible_host }}:9333,{{ hostvars['master3'].ansible_host }}:9333 -metricsPort=9327
+              KillSignal=SIGTERM
+              
+              [Install]
+              WantedBy=multi-user.target
+- name:  apply changes with daemon_reload
+  systemd:
+      daemon_reload: true
+- name: Ensure SeaweedFS filer Server service is enabled and started
+  systemd:
+    name: seaweedfs-filer
+    state: started
+    enabled: true

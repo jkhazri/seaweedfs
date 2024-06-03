@@ -1,0 +1,32 @@
+---
+
+    - name: Create systemd service file for seaweedfs-iam Server
+      copy:
+        dest: /etc/systemd/system/seaweedfs-iam.service
+        content: |
+                    [Unit]
+                    Description=SeaweedFS iam Server
+                    After=network.target
+                    
+                    [Service]
+                    Type=simple
+                    Restart=on-failure
+                    User=root
+                    Group=root
+                    
+                    ExecStart=/usr/local/bin/weed  iam -port=8111 -filer={{ hostvars['filer1'].ansible_host }}:8888 -master={{ hostvars['master1'].ansible_host }}:9333,{{ hostvars['master2'].ansible_host }}:9333,{{ hostvars['master3'].ansible_host }}:9333
+                    
+                    KillSignal=SIGTERM
+                    
+                    [Install]
+                    WantedBy=multi-user.target
+
+    - name:  apply changes with daemon_reload
+      systemd:
+          daemon_reload: true
+
+    - name: Ensure SeaweedFS S3  service is enabled and started
+      systemd:
+        name: seaweedfs-AmazonS3API
+        state: started
+        enabled: true

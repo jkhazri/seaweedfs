@@ -1,0 +1,7 @@
+---
+# defaults files for seaweedFS
+seaweedFS_conf_dir: "/etc/seaweedfs/"
+seaweedFS_service_dir: "/etc/systemd/system/"
+weed_binary_file_path:  "https://github.com/seaweedfs/seaweedfs/releases/download/3.67/linux_amd64.tar.gz"
+certstrap_binary_url: "https://github.com/square/certstrap/releases/download/v1.3.0/certstrap-linux-amd64"
+
