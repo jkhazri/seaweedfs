@@ -1,0 +1,3 @@
+---
+# defaults file for manage-inventory
+api_awx_group: SeaweedFSNode
